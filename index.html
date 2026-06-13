@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Economics with Anas Sheikh</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,900&family=Space+Grotesk:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<style>
+  :root{
+    --ink:#0A0A0B; --surface:#141416; --gold:#F5C518; --amber:#E0A500;
+    --paper:#ECE6D6; --text:#EDEDE8; --muted:#8A8A82;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:auto}
+  body{
+    background:var(--ink); color:var(--text);
+    font-family:"Space Grotesk",system-ui,sans-serif;
+    overflow-x:hidden; cursor:none;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit}
+  /* ---- WebGL layer ---- */
+  #webgl{position:fixed; inset:0; z-index:0;}
+  /* ---- grain ---- */
+  .grain{
+    position:fixed; inset:-50%; z-index:5; pointer-events:none; opacity:.05;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    animation:grain 6s steps(6) infinite; will-change:transform;
+  }
+  @keyframes grain{
+    0%{transform:translate(0,0)}10%{transform:translate(-4%,-4%)}30%{transform:translate(3%,-2%)}
+    50%{transform:translate(-2%,3%)}70%{transform:translate(4%,2%)}90%{transform:translate(-3%,4%)}100%{transform:translate(0,0)}
+  }
+  /* ---- custom cursor ---- */
+  .cursor{position:fixed; width:34px; height:34px; border:1px solid var(--gold); border-radius:50%;
+    z-index:50; pointer-events:none; transform:translate(-50%,-50%); transition:width .25s,height .25s,background .25s; mix-blend-mode:difference;}
+  .cursor-dot{position:fixed; width:5px; height:5px; background:var(--gold); border-radius:50%;
+    z-index:50; pointer-events:none; transform:translate(-50%,-50%);}
+  .cursor.grow{width:64px; height:64px; background:rgba(245,197,24,.12);}
+
+  main{position:relative; z-index:10;}
+  section{min-height:100vh; padding:8vh 7vw; display:flex; flex-direction:column; justify-content:center; position:relative;}
+  .eyebrow{font-family:"Space Mono",monospace; font-size:.72rem; letter-spacing:.35em; text-transform:uppercase; color:var(--gold);}
+  .index{font-family:"Space Mono",monospace; font-size:.72rem; letter-spacing:.3em; color:var(--muted); margin-bottom:1.4rem;}
+  h1,h2{font-family:"Fraunces",Georgia,serif; line-height:.95; font-weight:900; letter-spacing:-.02em;}
+  p{max-width:46ch; color:var(--muted); font-size:1.05rem; line-height:1.6;}
+  .lede{color:var(--text); font-size:1.25rem; max-width:52ch;}
+
+  /* HERO */
+  .hero{justify-content:flex-end;}
+  .hero h1{font-size:clamp(2.6rem,9.5vw,8.5rem); max-width:14ch;}
+  .hero .eyebrow{margin-bottom:1.5rem;}
+  .hero .word{overflow:hidden; display:inline-block;}
+  .hero .word span{display:inline-block;}
+  .hero .sub{margin-top:1.8rem; color:var(--text); font-size:1.05rem; max-width:40ch;}
+  .scrollcue{position:absolute; left:7vw; bottom:4vh; font-family:"Space Mono",monospace;
+    font-size:.7rem; letter-spacing:.3em; color:var(--muted); display:flex; align-items:center; gap:.8rem;}
+  .scrollcue .bar{width:48px; height:1px; background:var(--gold); transform-origin:left; animation:cue 1.8s ease-in-out infinite;}
+  @keyframes cue{0%,100%{transform:scaleX(.2)}50%{transform:scaleX(1)}}
+
+  /* POSITIONING */
+  .pos h2{font-size:clamp(2rem,5.5vw,4.5rem); max-width:16ch; margin-bottom:1.6rem;}
+  .pos .lede{font-style:normal;}
+  .stats{display:flex; gap:3rem; margin-top:2.6rem; flex-wrap:wrap;}
+  .stat .n{font-family:"Fraunces",serif; font-size:2.4rem; color:var(--gold); font-weight:600;}
+  .stat .l{font-family:"Space Mono",monospace; font-size:.7rem; letter-spacing:.2em; color:var(--muted); text-transform:uppercase;}
+
+  /* CURRICULUM */
+  .cur h2{font-size:clamp(2rem,5.5vw,4.2rem); margin-bottom:2.4rem;}
+  .chapters{display:flex; flex-direction:column; border-top:1px solid #26261f;}
+  .chapter{display:grid; grid-template-columns:3rem 1fr auto; gap:1.4rem; align-items:baseline;
+    padding:1.4rem 0; border-bottom:1px solid #26261f; max-width:640px;}
+  .chapter .ci{font-family:"Space Mono",monospace; color:var(--gold); font-size:.85rem;}
+  .chapter .ct{font-family:"Fraunces",serif; font-size:1.5rem; font-weight:600;}
+  .chapter .cd{font-family:"Space Mono",monospace; font-size:.72rem; color:var(--muted); letter-spacing:.1em;}
+
+  /* DEMAND & SUPPLY (signature) */
+  .ds{display:grid; grid-template-columns:1fr 1fr; gap:4vw; align-items:center;}
+  .ds .copy h2{font-size:clamp(1.8rem,4.5vw,3.4rem); margin-bottom:1.4rem;}
+  .graph{position:relative;}
+  .graph svg{width:100%; height:auto; overflow:visible;}
+  .axis{stroke:#3a3a30; stroke-width:1.2;}
+  .curve{fill:none; stroke-width:2.4; stroke-linecap:round;}
+  .curve.d{stroke:var(--paper);}
+  .curve.s{stroke:var(--gold);}
+  .lab{font-family:"Space Mono",monospace; font-size:13px; fill:var(--muted);}
+  .lab.d{fill:var(--paper);} .lab.s{fill:var(--gold);}
+  .eq{fill:var(--gold);}
+  .eqring{fill:none; stroke:var(--gold); stroke-width:1.5; transform-origin:center; transform-box:fill-box;}
+  @keyframes pulse{0%{opacity:.9; r:6}70%{opacity:0; r:26}100%{opacity:0; r:26}}
+
+  /* COURSES */
+  .courses h2{font-size:clamp(2rem,5.5vw,4rem); margin-bottom:3rem;}
+  .board{display:grid; grid-template-columns:1fr 2fr; gap:2vw; padding:2.4rem 0; border-top:1px solid #26261f; max-width:900px;}
+  .board:last-child{border-bottom:1px solid #26261f;}
+  .board .bt{font-family:"Fraunces",serif; font-size:2rem; font-weight:600;}
+  .board .bt .ci{display:block; font-family:"Space Mono",monospace; font-size:.7rem; color:var(--gold); letter-spacing:.2em; margin-bottom:.6rem;}
+  .board .topics{display:flex; flex-wrap:wrap; gap:.6rem; align-content:flex-start;}
+  .board .topics span{font-family:"Space Mono",monospace; font-size:.74rem; color:var(--muted);
+    border:1px solid #2c2c24; padding:.4rem .7rem; border-radius:999px;}
+  .board:nth-child(even){margin-left:8%;}
+
+  /* PROOF */
+  .proof blockquote{font-family:"Fraunces",serif; font-size:clamp(1.6rem,4vw,3rem); font-weight:400; line-height:1.15; max-width:18ch;}
+  .proof blockquote::before{content:"“"; color:var(--gold);}
+  .proof .ph{font-family:"Space Mono",monospace; font-size:.68rem; color:var(--muted); letter-spacing:.2em; margin-top:1.6rem;}
+
+  /* CONTACT */
+  .contact{justify-content:center; text-align:left;}
+  .contact h2{font-size:clamp(2.4rem,8vw,7rem); max-width:12ch; margin-bottom:2.4rem;}
+  .ctarow{display:flex; gap:1rem; flex-wrap:wrap; align-items:center;}
+  .cta{font-family:"Space Mono",monospace; letter-spacing:.05em; text-decoration:none; padding:1rem 1.6rem;
+    border:1px solid var(--gold); color:var(--gold); border-radius:2px; display:inline-flex; gap:.6rem; font-size:.85rem;
+    transition:background .25s,color .25s;}
+  .cta.solid{background:var(--gold); color:var(--ink);}
+  .cta:hover{background:var(--gold); color:var(--ink);}
+  .footer{margin-top:5rem; display:flex; justify-content:space-between; flex-wrap:wrap; gap:1rem;
+    font-family:"Space Mono",monospace; font-size:.68rem; color:var(--muted); letter-spacing:.15em;}
+
+  [data-reveal]{opacity:0;}
+  @media (max-width:760px){
+    body{cursor:auto}
+    .cursor,.cursor-dot{display:none}
+    .ds{grid-template-columns:1fr; gap:3rem}
+    .board{grid-template-columns:1fr; gap:1.2rem}
+    .board:nth-child(even){margin-left:0}
+    section{padding:10vh 8vw}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .grain,.scrollcue .bar{animation:none}
+  }
+</style>
+</head>
+<body>
+<div id="webgl"></div>
+<div class="grain"></div>
+<div class="cursor"></div>
+<div class="cursor-dot"></div>
+
+<main>
+  <!-- HERO -->
+  <section class="hero">
+    <div class="eyebrow" data-reveal>O Level · A Level · IGCSE</div>
+    <h1 id="heroTitle">Economics with Anas Sheikh</h1>
+    <p class="sub" data-reveal>Private economics tuition built around understanding — not memorising. Concepts first, past papers second, top grades after.</p>
+    <div class="scrollcue"><span class="bar"></span> SCROLL</div>
+  </section>
+
+  <!-- POSITIONING -->
+  <section class="pos">
+    <div class="index" data-reveal>— 01 / The approach</div>
+    <h2 data-reveal>Economics, taught until it finally clicks.</h2>
+    <p class="lede" data-reveal>Most students don't fail economics because it's hard. They fail because nobody connected the diagrams to the real world. Every topic is rebuilt from intuition, then drilled against the examiner's mark scheme.</p>
+    <div class="stats">
+      <div class="stat" data-reveal><div class="n">3</div><div class="l">Exam boards</div></div>
+      <div class="stat" data-reveal><div class="n">1:1</div><div class="l">&amp; small groups</div></div>
+      <div class="stat" data-reveal><div class="n">A*</div><div class="l">The target</div></div>
+    </div>
+  </section>
+
+  <!-- CURRICULUM -->
+  <section class="cur">
+    <div class="index" data-reveal>— 02 / The syllabus, decoded</div>
+    <h2 data-reveal>From first principles to full marks.</h2>
+    <div class="chapters">
+      <div class="chapter" data-reveal><span class="ci">i.</span><span class="ct">The basic economic problem</span><span class="cd">SCARCITY · CHOICE</span></div>
+      <div class="chapter" data-reveal><span class="ci">ii.</span><span class="ct">Demand, supply &amp; the price mechanism</span><span class="cd">MICRO</span></div>
+      <div class="chapter" data-reveal><span class="ci">iii.</span><span class="ct">Market failure &amp; intervention</span><span class="cd">MICRO</span></div>
+      <div class="chapter" data-reveal><span class="ci">iv.</span><span class="ct">The macroeconomy &amp; policy</span><span class="cd">MACRO</span></div>
+      <div class="chapter" data-reveal><span class="ci">v.</span><span class="ct">International trade &amp; exchange rates</span><span class="cd">GLOBAL</span></div>
+    </div>
+  </section>
+
+  <!-- DEMAND & SUPPLY  (signature) -->
+  <section class="ds">
+    <div class="copy">
+      <div class="index" data-reveal>— 03 / The one diagram that runs everything</div>
+      <h2 data-reveal>Where the curves cross, the market decides.</h2>
+      <p data-reveal>We start here and never really leave. Once a student can move these lines in their head — shift demand, shock supply, find the new equilibrium — every exam question becomes the same question wearing a different costume.</p>
+    </div>
+    <div class="graph" id="graph">
+      <svg viewBox="0 0 400 300" aria-hidden="true">
+        <line class="axis" x1="50" y1="20" x2="50" y2="260"></line>
+        <line class="axis" x1="50" y1="260" x2="370" y2="260"></line>
+        <text class="lab" x="30" y="30">P</text>
+        <text class="lab" x="362" y="282">Q</text>
+        <path class="curve d" id="dCurve" d="M70,50 L340,250"></path>
+        <path class="curve s" id="sCurve" d="M70,250 L340,50"></path>
+        <text class="lab d" x="345" y="255">D</text>
+        <text class="lab s" x="345" y="48">S</text>
+        <g id="eqGroup" opacity="0">
+          <circle class="eqring" cx="205" cy="150" r="6" style="animation:pulse 2.2s ease-out infinite"></circle>
+          <circle class="eq" cx="205" cy="150" r="5"></circle>
+          <text class="lab s" x="214" y="146">E</text>
+        </g>
+      </svg>
+    </div>
+  </section>
+
+  <!-- COURSES -->
+  <section class="courses">
+    <div class="index" data-reveal>— 04 / Choose your board</div>
+    <h2 data-reveal>One tutor. Every syllabus.</h2>
+    <div class="board" data-reveal>
+      <div class="bt"><span class="ci">FOUNDATION</span>O Level</div>
+      <div class="topics"><span>Basic economic problem</span><span>Demand &amp; supply</span><span>Markets</span><span>Households &amp; firms</span><span>Government &amp; the economy</span></div>
+    </div>
+    <div class="board" data-reveal>
+      <div class="bt"><span class="ci">INTERNATIONAL</span>IGCSE</div>
+      <div class="topics"><span>Price determination</span><span>Market failure</span><span>Macro objectives</span><span>Trade &amp; the global economy</span><span>Data response</span></div>
+    </div>
+    <div class="board" data-reveal>
+      <div class="bt"><span class="ci">ADVANCED</span>A Level</div>
+      <div class="topics"><span>Elasticities</span><span>Market structures</span><span>Macro models</span><span>Fiscal &amp; monetary policy</span><span>Essay technique</span><span>25-mark evaluation</span></div>
+    </div>
+  </section>
+
+  <!-- PROOF -->
+  <section class="proof">
+    <div class="index" data-reveal>— 05 / In their words</div>
+    <blockquote data-reveal>He made me actually enjoy a subject I was ready to drop.</blockquote>
+    <div class="ph" data-reveal>[ PLACEHOLDER — replace with a real student / parent quote ]</div>
+  </section>
+
+  <!-- CONTACT -->
+  <section class="contact">
+    <div class="index" data-reveal>— 06 / Start</div>
+    <h2 data-reveal>Let's get your grade moving.</h2>
+    <div class="ctarow">
+      <a class="cta solid" href="https://wa.me/923312204895" target="_blank" rel="noopener" data-hover>WhatsApp · +92 331 2204895</a>
+      <a class="cta" href="#" data-hover>Instagram · @[handle]</a>
+    </div>
+    <div class="footer">
+      <span>ECONOMICS WITH ANAS SHEIKH</span>
+      <span>O LEVEL · A LEVEL · IGCSE</span>
+      <span>PREVIEW BUILD — STAND-IN 3D</span>
+    </div>
+  </section>
+</main>
+
+<script>
+const reduce = window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+const isTouch = window.matchMedia('(max-width:760px)').matches;
+
+/* ============ THREE.JS SCENE ============ */
+const wrap = document.getElementById('webgl');
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(45, innerWidth/innerHeight, 0.1, 100);
+camera.position.set(0,0,6);
+const renderer = new THREE.WebGLRenderer({antialias:true, alpha:true});
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+wrap.appendChild(renderer.domElement);
+
+scene.add(new THREE.AmbientLight(0xffffff, .55));
+const key = new THREE.DirectionalLight(0xfff2cc, 1.1); key.position.set(4,6,8); scene.add(key);
+const rim = new THREE.PointLight(0xF5C518, 1.4, 40); rim.position.set(-6,2,2); scene.add(rim);
+
+/* --- helpers --- */
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const smooth=t=>t*t*(3-2*t);
+const seg=(p,a,b)=>smooth(clamp((p-a)/(b-a),0,1));
+const lerp=(a,b,t)=>a+(b-a)*t;
+
+/* --- graph-paper backdrop --- */
+function gridTex(){
+  const c=document.createElement('canvas'); c.width=c.height=1024; const x=c.getContext('2d');
+  x.strokeStyle='rgba(245,197,24,0.06)'; x.lineWidth=1;
+  for(let i=0;i<=1024;i+=64){x.beginPath();x.moveTo(i,0);x.lineTo(i,1024);x.stroke();x.beginPath();x.moveTo(0,i);x.lineTo(1024,i);x.stroke();}
+  const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(2,2); return t;
+}
+const gridPlane=new THREE.Mesh(
+  new THREE.PlaneGeometry(40,40),
+  new THREE.MeshBasicMaterial({map:gridTex(), transparent:true, opacity:.5, depthWrite:false})
+);
+gridPlane.position.z=-8; scene.add(gridPlane);
+
+/* --- VIDEO PANEL (stand-in for main.mp4) --- */
+const vCanvas=document.createElement('canvas'); vCanvas.width=640; vCanvas.height=360;
+const vCtx=vCanvas.getContext('2d'); const vTex=new THREE.CanvasTexture(vCanvas);
+function drawVideo(t){
+  const g=vCtx.createLinearGradient(0,0,640,360);
+  const a=(Math.sin(t*0.6)+1)/2;
+  g.addColorStop(0,'#0c0c0d'); g.addColorStop(clamp(a,0.1,0.9),'#1b1b14'); g.addColorStop(1,'#0c0c0d');
+  vCtx.fillStyle=g; vCtx.fillRect(0,0,640,360);
+  vCtx.strokeStyle='rgba(245,197,24,.5)'; vCtx.lineWidth=2; vCtx.strokeRect(8,8,624,344);
+  // play triangle
+  vCtx.fillStyle='#F5C518'; vCtx.beginPath(); vCtx.moveTo(290,150); vCtx.lineTo(290,210); vCtx.lineTo(345,180); vCtx.closePath(); vCtx.fill();
+  // label
+  vCtx.fillStyle='#EDEDE8'; vCtx.font='600 22px "Space Mono",monospace';
+  vCtx.fillText('ANAS SHEIKH', 30, 320);
+  vCtx.fillStyle='#8A8A82'; vCtx.font='13px "Space Mono",monospace';
+  vCtx.fillText('INTRO — 0:10', 30, 44);
+  // waveform shimmer
+  vCtx.strokeStyle='rgba(245,197,24,.35)';
+  vCtx.beginPath();
+  for(let i=0;i<60;i++){const xx=400+i*4; const yy=320+Math.sin(t*4+i*0.5)*8; i?vCtx.lineTo(xx,yy):vCtx.moveTo(xx,yy);}
+  vCtx.stroke();
+  vTex.needsUpdate=true;
+}
+const vPanel=new THREE.Group();
+const screen=new THREE.Mesh(new THREE.PlaneGeometry(3.4,1.9), new THREE.MeshBasicMaterial({map:vTex, transparent:true}));
+vPanel.add(screen);
+const frame=new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.PlaneGeometry(3.5,2.0)), new THREE.LineBasicMaterial({color:0xF5C518}));
+vPanel.add(frame);
+vPanel.position.set(1.4,0.7,0); scene.add(vPanel);
+
+/* --- BOOK (stand-in for Book.glb) --- */
+function coverTex(){
+  const c=document.createElement('canvas'); c.width=420; c.height=560; const x=c.getContext('2d');
+  x.fillStyle='#141416'; x.fillRect(0,0,420,560);
+  x.strokeStyle='#F5C518'; x.lineWidth=2; x.strokeRect(22,22,376,516);
+  x.fillStyle='#F5C518'; x.font='italic 900 46px Fraunces, serif';
+  x.fillText('ECONO-',46,150); x.fillText('MICS',46,200);
+  x.fillStyle='#8A8A82'; x.font='14px "Space Mono",monospace'; x.fillText('— with —',46,250);
+  x.fillStyle='#EDEDE8'; x.font='700 26px "Space Mono",monospace'; x.fillText('ANAS',46,300); x.fillText('SHEIKH',46,332);
+  x.fillStyle='#8A8A82'; x.font='12px "Space Mono",monospace'; x.fillText('O / A / IGCSE',46,500);
+  return new THREE.CanvasTexture(c);
+}
+const book=new THREE.Group();
+const dark=new THREE.MeshStandardMaterial({color:0x141416, roughness:.6, metalness:.2});
+const cover=new THREE.MeshStandardMaterial({map:coverTex(), roughness:.5, metalness:.15});
+const pages=new THREE.MeshStandardMaterial({color:0xECE6D6, roughness:.9});
+const bookMesh=new THREE.Mesh(new THREE.BoxGeometry(2.3,3.1,0.5),
+  [dark, dark, pages, pages, cover, dark]); // +x,-x,+y,-y,+z(front),-z
+book.add(bookMesh);
+book.add(new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(2.31,3.11,0.51)),
+  new THREE.LineBasicMaterial({color:0xF5C518, transparent:true, opacity:.5})));
+scene.add(book); book.visible=false;
+
+/* --- DEMAND & SUPPLY object (stand-in for Dns.glb) --- */
+const dns=new THREE.Group();
+const goldMat=new THREE.MeshStandardMaterial({color:0xF5C518, roughness:.35, metalness:.5, emissive:0x3a2c00});
+const paperMat=new THREE.MeshStandardMaterial({color:0xECE6D6, roughness:.6, metalness:.1});
+const supplyBar=new THREE.Mesh(new THREE.BoxGeometry(0.16,4.4,0.16), goldMat); supplyBar.rotation.z=-0.6;
+const demandBar=new THREE.Mesh(new THREE.BoxGeometry(0.16,4.4,0.16), paperMat); demandBar.rotation.z=0.6;
+const eqNode=new THREE.Mesh(new THREE.SphereGeometry(0.26,32,32), new THREE.MeshStandardMaterial({color:0xF5C518, emissive:0xF5C518, emissiveIntensity:.7}));
+const axisX=new THREE.Mesh(new THREE.BoxGeometry(4,0.05,0.05), new THREE.MeshBasicMaterial({color:0x3a3a30}));
+const axisY=new THREE.Mesh(new THREE.BoxGeometry(0.05,4,0.05), new THREE.MeshBasicMaterial({color:0x3a3a30}));
+axisX.position.set(0.4,-2,0); axisY.position.set(-1.6,0,0);
+dns.add(supplyBar,demandBar,eqNode,axisX,axisY);
+scene.add(dns); dns.visible=false;
+
+/* --- scroll progress --- */
+let progress=0;
+function updateProgress(){
+  const max=document.body.scrollHeight-innerHeight;
+  progress=clamp(scrollY/max,0,1);
+}
+addEventListener('scroll',updateProgress,{passive:true});
+
+const clock=new THREE.Clock();
+function tick(){
+  const dt=clock.getDelta(); const t=clock.elapsedTime;
+  drawVideo(t);
+  gridPlane.position.y = -progress*6;
+  gridPlane.rotation.z = progress*0.15;
+
+  // video panel: present at top, recede on scroll
+  const vOut=seg(progress,0.05,0.22);
+  vPanel.visible=vOut<0.99;
+  vPanel.position.set(lerp(1.4,-0.4,vOut), lerp(0.7,2.2,vOut), lerp(0,-5,vOut));
+  vPanel.rotation.y=lerp(0,-0.7,vOut); vPanel.scale.setScalar(lerp(1,0.5,vOut));
+  screen.material.opacity=1-vOut; frame.material.opacity=1-vOut;
+
+  // book
+  const enter=seg(progress,0.10,0.30), exit=seg(progress,0.46,0.56), contact=seg(progress,0.92,1);
+  const main=enter*(1-exit);
+  book.visible=main>0.002||contact>0.002;
+  const bs=Math.max(main, contact*0.4); book.scale.setScalar(bs);
+  let bx=lerp(2.6,0.5,enter); bx=lerp(bx,-3.6,exit);
+  let bz=lerp(-7,0,enter); bz=lerp(bz,-5,exit);
+  let by=lerp(0.5,0,enter);
+  if(contact>0.002){bx=-2.4;by=-0.5;bz=-3.5;}
+  book.position.set(bx,by,bz);
+  if(!reduce) book.rotation.y+=dt*0.35;
+  book.rotation.x=-0.08+Math.sin(t*0.3)*0.04;
+
+  // dns
+  const dIn=seg(progress,0.46,0.62), dOut=seg(progress,0.70,0.80);
+  const dMain=dIn*(1-dOut);
+  dns.visible=dMain>0.002;
+  dns.scale.setScalar(dMain);
+  let dx=lerp(2.8,0.6,dIn); dx=lerp(dx,3.4,dOut);
+  let dz=lerp(-6,0,dIn); dz=lerp(dz,-4,dOut);
+  dns.position.set(dx,0,dz);
+  if(!reduce) dns.rotation.y+=dt*0.4;
+  eqNode.material.emissiveIntensity=0.5+Math.sin(t*3)*0.3;
+
+  renderer.render(scene,camera);
+  requestAnimationFrame(tick);
+}
+updateProgress(); tick();
+
+addEventListener('resize',()=>{
+  camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth,innerHeight); updateProgress();
+});
+
+/* ============ GSAP TEXT CHOREOGRAPHY ============ */
+gsap.registerPlugin(ScrollTrigger);
+
+// hero title -> word/letter assembly
+const title=document.getElementById('heroTitle');
+const words=title.textContent.trim().split(' ');
+title.innerHTML=words.map(w=>'<span class="word"><span>'+w+'</span></span>').join(' ');
+if(!reduce){
+  gsap.from('#heroTitle .word span',{yPercent:120, duration:1, ease:'expo.out', stagger:0.08, delay:0.2});
+  gsap.set('#heroTitle .word span',{yPercent:120});
+  gsap.to('#heroTitle .word span',{yPercent:0, duration:1, ease:'expo.out', stagger:0.08, delay:0.2});
+}
+
+// generic reveals
+gsap.utils.toArray('[data-reveal]').forEach(el=>{
+  gsap.fromTo(el,{y:34,opacity:0},{
+    y:0,opacity:1,duration:1,ease:'expo.out',
+    scrollTrigger:{trigger:el,start:'top 86%'}
+  });
+});
+
+// demand & supply curve draw
+['dCurve','sCurve'].forEach(id=>{
+  const path=document.getElementById(id); const len=path.getTotalLength();
+  path.style.strokeDasharray=len; path.style.strokeDashoffset=len;
+  gsap.to(path,{strokeDashoffset:0, ease:'none',
+    scrollTrigger:{trigger:'#graph', start:'top 75%', end:'top 30%', scrub:0.6}});
+});
+ScrollTrigger.create({trigger:'#graph', start:'top 40%',
+  onEnter:()=>gsap.to('#eqGroup',{opacity:1,duration:.6}),
+  onLeaveBack:()=>gsap.to('#eqGroup',{opacity:0,duration:.3})});
+
+/* ============ CUSTOM CURSOR ============ */
+if(!isTouch){
+  const cur=document.querySelector('.cursor'), dot=document.querySelector('.cursor-dot');
+  const xT=gsap.quickTo(cur,'left',{duration:.5,ease:'power3'});
+  const yT=gsap.quickTo(cur,'top',{duration:.5,ease:'power3'});
+  addEventListener('mousemove',e=>{
+    xT(e.clientX); yT(e.clientY);
+    dot.style.left=e.clientX+'px'; dot.style.top=e.clientY+'px';
+  });
+  document.querySelectorAll('[data-hover],a').forEach(el=>{
+    el.addEventListener('mouseenter',()=>cur.classList.add('grow'));
+    el.addEventListener('mouseleave',()=>cur.classList.remove('grow'));
+  });
+}
+</script>
+</body>
+</html>
